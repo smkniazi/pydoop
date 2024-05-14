@@ -122,6 +122,14 @@ class PathFinder(object):
 
     def hadoop_classpath(self):
         if not self.__hadoop_classpath:
+            print("----");
+            result = subprocess.run("hadoop classpath --glob ", shell=True, capture_output=True, text=True) 
+            print("stderr "+result.stderr)
+            print("stdout "+result.stdout)
+            print("retun code "+str(result.returncode))
+            print("----");
+
+
             cp = subprocess.check_output(
                 "hadoop classpath --glob", shell=True, universal_newlines=True
             ).strip()

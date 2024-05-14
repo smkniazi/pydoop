@@ -50,6 +50,7 @@ class _FSStatus(object):
         self.port = port
         self.user = user
         self.refcount = refcount
+        print("XXX------> "+host+"\n")
 
     def __repr__(self):
         return "_FSStatus(%s, %s)" % (self.fs, self.refcount)

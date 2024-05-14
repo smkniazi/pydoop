@@ -24,14 +24,18 @@ import os
 
 
 def init():
+    print("XXX trying to import jvm lib\n");
     import pydoop.utils.jvm as jvm
     jvm.load_jvm_lib()
     try:
         # NOTE: JVM must be already instantiated
         import pydoop.native_core_hdfs
     except ImportError:
-        return None  # should only happen at compile time
+        print("XXX jvm lib. return none\n")
+        #return None  # should only happen at compile time
+        return pydoop.native_core_hdfs
     else:
+        print("XXX jvm lib. return native_code_hdfs\n")
         return pydoop.native_core_hdfs
 
 
@@ -41,6 +45,7 @@ def core_hdfs_fs(host, port, user):
         if os.path.isdir("pydoop"):
             msg = "Trying to import from the source directory?"
         else:
-            msg = "Check that Pydoop is correctly installed"
-        raise RuntimeError("Core module unavailable. %s" % msg)
+            msg = "XXX Check that Pydoop is correctly installed"
+            print(msg+"\n")
+        #raise RuntimeError("Core module unavailable. %s" % msg)
     return _CORE_MODULE.CoreHdfsFs(host, port, user)
