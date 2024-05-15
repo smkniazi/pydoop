@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# install
+# activate env
+#CFLAGS=-I/usr/include/tirpc pip install .
+
+CFLAGS=-I/usr/include/tirpc python setup.py sdist 
+

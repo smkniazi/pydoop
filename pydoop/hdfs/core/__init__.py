@@ -24,8 +24,8 @@ import os
 
 
 def init():
-    import pydoop.utils.jvm as jvm
-    jvm.load_jvm_lib()
+    #import pydoop.utils.jvm as jvm
+    #jvm.load_jvm_lib()
     try:
         # NOTE: JVM must be already instantiated
         import pydoop.native_core_hdfs

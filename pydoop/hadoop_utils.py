@@ -122,9 +122,11 @@ class PathFinder(object):
 
     def hadoop_classpath(self):
         if not self.__hadoop_classpath:
-            cp = subprocess.check_output(
-                "hadoop classpath --glob", shell=True, universal_newlines=True
-            ).strip()
+            #cp = subprocess.check_output(
+            #    "hadoop classpath --glob", shell=True, universal_newlines=True
+            #).strip()
+            # libhdfs.go does not need these jar files
+            cp = ""
             # older hadoop versions ignore --glob
             if 'hadoop-common' not in cp:
                 cp = ':'.join(':'.join(glob.iglob(_)) for _ in cp.split(':'))
