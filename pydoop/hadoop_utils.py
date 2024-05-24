@@ -80,45 +80,48 @@ class PathFinder(object):
 
     # note that this can be None even after trying detection
     def hadoop_home(self):
-        if not self.__hadoop_home:
-            hh = os.getenv("HADOOP_HOME", os.getenv("HADOOP_PREFIX"))
-            if not hh:
-                exe = subprocess.check_output(
-                    "command -v hadoop", shell=True, universal_newlines=True
-                ).strip()
-                candidate, child = os.path.split(os.path.dirname(exe))
-                if child == "bin" and os.path.isdir(candidate):
-                    hh = os.environ["HADOOP_HOME"] = candidate
-            self.__hadoop_home = hh
-        return self.__hadoop_home
+        #if not self.__hadoop_home:
+        #    hh = os.getenv("HADOOP_HOME", os.getenv("HADOOP_PREFIX"))
+        #    if not hh:
+        #        exe = subprocess.check_output(
+        #            "command -v hadoop", shell=True, universal_newlines=True
+        #        ).strip()
+        #        candidate, child = os.path.split(os.path.dirname(exe))
+        #        if child == "bin" and os.path.isdir(candidate):
+        #            hh = os.environ["HADOOP_HOME"] = candidate
+        #    self.__hadoop_home = hh
+        #return self.__hadoop_home
+        return "/tmp" 
 
     def hadoop_conf(self):
-        if not self.__hadoop_conf:
-            error = "Hadoop config not found, try setting HADOOP_CONF_DIR"
-            try:
-                self.__hadoop_conf = os.environ["HADOOP_CONF_DIR"]
-            except KeyError:
-                hh = self.hadoop_home()
-                if not hh:
-                    raise RuntimeError(error)
-                candidate = os.path.join(hh, 'etc', 'hadoop')
-                if not os.path.isdir(candidate):
-                    raise RuntimeError(error)
-                self.__hadoop_conf = os.environ["HADOOP_CONF_DIR"] = candidate
-        return self.__hadoop_conf
+        #if not self.__hadoop_conf:
+        #    error = "Hadoop config not found, try setting HADOOP_CONF_DIR"
+        #    try:
+        #        self.__hadoop_conf = os.environ["HADOOP_CONF_DIR"]
+        #    except KeyError:
+        #        hh = self.hadoop_home()
+        #        if not hh:
+        #            raise RuntimeError(error)
+        #        candidate = os.path.join(hh, 'etc', 'hadoop')
+        #        if not os.path.isdir(candidate):
+        #            raise RuntimeError(error)
+        #        self.__hadoop_conf = os.environ["HADOOP_CONF_DIR"] = candidate
+        #return self.__hadoop_conf
+        return "/tmp" 
 
     def hadoop_params(self):
-        if not self.__hadoop_params:
-            params = {}
-            hadoop_conf = self.hadoop_conf()
-            for n in "hadoop", "core", "hdfs", "mapred":
-                fn = os.path.join(hadoop_conf, "%s-site.xml" % n)
-                try:
-                    params.update(parse_hadoop_conf_file(fn))
-                except (IOError, HadoopXMLError):
-                    pass  # silently ignore, as in Hadoop
-            self.__hadoop_params = params
-        return self.__hadoop_params
+        #if not self.__hadoop_params:
+        #    params = {}
+        #    hadoop_conf = self.hadoop_conf()
+        #    for n in "hadoop", "core", "hdfs", "mapred":
+        #        fn = os.path.join(hadoop_conf, "%s-site.xml" % n)
+        #        try:
+        #            params.update(parse_hadoop_conf_file(fn))
+        #        except (IOError, HadoopXMLError):
+        #            pass  # silently ignore, as in Hadoop
+        #    self.__hadoop_params = params
+        #return self.__hadoop_params
+        return {}
 
     def hadoop_classpath(self):
         if not self.__hadoop_classpath:
