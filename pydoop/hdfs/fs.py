@@ -67,26 +67,44 @@ def _get_ip(host, default=None):
         ip = "0.0.0.0"  # same as socket.gethostbyname("")
     return ip if ip != "0.0.0.0" else default
 
+def _get_hopsfs_connection_info():
+    # Read LIBHDFS_DEFAULT_FS and LIBHDFS_DEFAULT_USER environment variables
+    default_fs = os.getenv("LIBHDFS_DEFAULT_FS")
+    default_user = os.getenv("LIBHDFS_DEFAULT_USER")
+    
+    # Split host and port from LIBHDFS_DEFAULT_FS
+    if default_fs:
+        host, port = default_fs.split(":")
+    else:
+        host, port = None, None
+    
+    return host, port, default_user
 
 def _get_connection_info(host, port, user):
     fs = core_hdfs_fs(host, port, user)
-    res = urlparse(fs.get_working_directory())
-    if not res.scheme or res.scheme == "file":
-        h, p, u = "", 0, getpass.getuser()
-        fs.set_working_directory(os.getcwd())  # libhdfs "remembers" old cwd
-    else:
-        try:
-            h, p = res.netloc.split(":")
-        except ValueError:
-            h, p = res.netloc, common.DEFAULT_PORT
 
-            # try to find an IP address if we can't extract it from res.netloc
-            if not res.netloc:
-                hosts = fs.get_hosts(str(res.path), 0, 0)
-                if hosts and hosts[0] and hosts[0][0]:
-                    h, p = hosts[0][0], common.DEFAULT_PORT
-        u = res.path.split("/", 2)[2]
-    return h, int(p), u, fs
+    # get hopsfs connection info from env variables
+    h, p, u = _get_hopsfs_connection_info()
+    if host is not None and port is not None and user is not None:
+        return h, int(p), u, fs
+    else:
+        res = urlparse(fs.get_working_directory())
+        if not res.scheme or res.scheme == "file":
+            h, p, u = "", 0, getpass.getuser()
+            fs.set_working_directory(os.getcwd())  # libhdfs "remembers" old cwd
+        else:
+            try:
+                h, p = res.netloc.split(":")
+            except ValueError:
+                h, p = res.netloc, common.DEFAULT_PORT
+
+                # try to find an IP address if we can't extract it from res.netloc
+                if not res.netloc:
+                    hosts = fs.get_hosts(str(res.path), 0, 0)
+                    if hosts and hosts[0] and hosts[0][0]:
+                        h, p = hosts[0][0], common.DEFAULT_PORT
+            u = res.path.split("/", 2)[2]
+        return h, int(p), u, fs
 
 
 def _default_fs():
