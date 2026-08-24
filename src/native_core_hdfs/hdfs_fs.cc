@@ -775,10 +775,12 @@ PyObject *FsClass_chown(FsInfo *self, PyObject *args, PyObject *kwds) {
     Py_BEGIN_ALLOW_THREADS;
         fileInfo = hdfsGetPathInfo(self->_fs, path);
         if (NULL == fileInfo) {
+            Py_BLOCK_THREADS; // we 'return' below, skipping over END_ALLOW_THREADS
+            PyErr_SetFromErrno(PyExc_IOError);
             PyMem_Free(path);
             PyMem_Free(input_user);
             PyMem_Free(input_group);
-	    return PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
         }
         const char* new_user = str_empty(input_user) ? fileInfo->mOwner : input_user;
         const char* new_group = str_empty(input_group) ? fileInfo->mGroup : input_group;
