@@ -564,7 +564,6 @@ PyObject *FsClass_list_directory(FsInfo *self, PyObject *args, PyObject *kwds) {
 
     Py_BEGIN_ALLOW_THREADS;
         pathInfo = hdfsGetPathInfo(self->_fs, path);
-        PyMem_Free(path);
         if (!pathInfo) {
             Py_BLOCK_THREADS; // later we 'goto' skipping over END_ALLOW_THREADS
             PyErr_SetFromErrno(PyExc_IOError);
@@ -617,6 +616,9 @@ error:
 
 done:
     // all code paths go through the 'done' section
+    // freed here, not next to hdfsGetPathInfo: PyMem_Free requires the GIL,
+    // which the ALLOW_THREADS region above has released
+    PyMem_Free(path);
     if (pathInfo != NULL)
         hdfsFreeFileInfo(pathInfo, 1);
     if (pathList != NULL)
