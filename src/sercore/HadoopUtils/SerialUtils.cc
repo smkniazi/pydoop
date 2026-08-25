@@ -18,8 +18,7 @@
 #include "SerialUtils.hh"
 
 #include <errno.h>
-#include <rpc/types.h>
-#include <rpc/xdr.h>
+#include <stdint.h>
 #include <string>
 #include <string.h>
 
@@ -244,10 +243,14 @@ namespace HadoopUtils {
 
   void serializeFloat(float t, OutStream& stream)
   {
+    // big-endian IEEE 754, same wire format as XDR
+    uint32_t bits;
+    memcpy(&bits, &t, sizeof(bits));
     char buf[sizeof(float)];
-    XDR xdrs;
-    xdrmem_create(&xdrs, buf, sizeof(float), XDR_ENCODE);
-    xdr_float(&xdrs, &t);
+    buf[0] = (char)((bits >> 24) & 0xFF);
+    buf[1] = (char)((bits >> 16) & 0xFF);
+    buf[2] = (char)((bits >> 8) & 0xFF);
+    buf[3] = (char)(bits & 0xFF);
     stream.write(buf, sizeof(float));
   }
 
@@ -260,11 +263,11 @@ namespace HadoopUtils {
 
   void deserializeFloat(float& t, InStream& stream)
   {
-    char buf[sizeof(float)];
-    stream.read(buf, sizeof(float));
-    XDR xdrs;
-    xdrmem_create(&xdrs, buf, sizeof(float), XDR_DECODE);
-    xdr_float(&xdrs, &t);
+    unsigned char buf[sizeof(float)];
+    stream.read((char*)buf, sizeof(float));
+    uint32_t bits = ((uint32_t)buf[0] << 24) | ((uint32_t)buf[1] << 16) |
+                    ((uint32_t)buf[2] << 8) | (uint32_t)buf[3];
+    memcpy(&t, &bits, sizeof(t));
   }
 
   void serializeString(const std::string& t, OutStream& stream)

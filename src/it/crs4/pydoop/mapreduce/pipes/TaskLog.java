@@ -169,7 +169,8 @@ public class TaskLog {
             fis.close();
             fis = null;
         } finally {
-            IOUtils.cleanup(LOG, fis);
+            // IOUtils.cleanup(Log, ...) removed in Hadoop 3.3+
+            IOUtils.closeStream(fis);
         }
         return l;
     }
@@ -240,7 +241,8 @@ public class TaskLog {
             dos.close();
             dos = null;
         } finally {
-            IOUtils.cleanup(LOG, dos);
+            // IOUtils.cleanup(Log, ...) removed in Hadoop 3.3+
+            IOUtils.closeStream(dos);
         }
         
         File indexFile = getIndexFile(currentTaskid, isCleanup);

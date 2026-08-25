@@ -25,7 +25,8 @@ import os
 import random
 import uuid
 import tempfile
-import imp
+import importlib.machinery
+import importlib.util
 import unittest
 import shutil
 import warnings
@@ -154,12 +155,12 @@ def silent_call(func, *args, **kwargs):
 
 def get_module(name, path=None):
 
-    fp, pathname, description = imp.find_module(name, path)
-    try:
-        module = imp.load_module(name, fp, pathname, description)
-        return module
-    finally:
-        fp.close()
+    spec = importlib.machinery.PathFinder.find_spec(name, path)
+    if spec is None:
+        raise ImportError("module %r not found in %r" % (name, path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def compile_java(java_file, classpath, opts=None):

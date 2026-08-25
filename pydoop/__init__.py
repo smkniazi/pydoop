@@ -144,7 +144,8 @@ class AddSectionWrapper(object):
 
 
 def read_properties(fname):
-    parser = configparser.SafeConfigParser()
+    # SafeConfigParser was removed in Python 3.12 (alias of ConfigParser)
+    parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str  # preserve key case
     try:
         with open(fname) as f:
