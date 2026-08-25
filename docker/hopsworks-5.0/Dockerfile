@@ -130,8 +130,11 @@ RUN set -eux; \
     SDIST="pydoop-${VERSION}-${ARTIFACT_SUFFIX}.tar.gz"; \
     "${BASE_ENV}/bin/python" setup.py -q sdist; \
     mv "dist/pydoop-${VERSION}.tar.gz" "dist/${SDIST}"; \
-    # exactly what python-feature-pipeline/python_install.sh runs against repo.hops.works
+    # 1) exactly what python-feature-pipeline/python_install.sh runs against repo.hops.works
     "${BASE_ENV}/bin/pip" install --no-build-isolation "dist/${SDIST}"; \
+    # 2) a plain `pip install <sdist>`: pip builds in an isolated env with the *latest*
+    #    setuptools (>=81, no pkg_resources), which is how people install it by hand
+    "${BASE_ENV}/bin/pip" install --force-reinstall --no-deps "dist/${SDIST}"; \
     # a binary wheel from the same sdist, for dropping straight into a running 5.0 pod
     "${BASE_ENV}/bin/pip" wheel --no-build-isolation --no-deps -w dist "dist/${SDIST}"; \
     "${BASE_ENV}/bin/pip" check

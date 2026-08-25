@@ -36,6 +36,7 @@ make sure that the ``hadoop`` executable is in the PATH.
 from __future__ import print_function
 
 import sys
+import re
 import time
 import os
 import glob
@@ -46,9 +47,18 @@ import tempfile
 SETUPTOOLS_MIN_VER = '3.3'
 
 import setuptools
-from pkg_resources import parse_version  # included in setuptools
 print('using setuptools version', setuptools.__version__)
-if parse_version(setuptools.__version__) < parse_version(SETUPTOOLS_MIN_VER):
+
+
+def _version_tuple(v):
+    # pkg_resources.parse_version was used here, but setuptools>=81 no longer
+    # ships pkg_resources, which broke installs in an isolated build env
+    # (pip pulls the latest setuptools there). A numeric tuple is enough for
+    # this check.
+    return tuple(int(x) for x in re.findall(r'\d+', v)[:3])
+
+
+if _version_tuple(setuptools.__version__) < _version_tuple(SETUPTOOLS_MIN_VER):
     raise RuntimeError(
         'setuptools minimum required version: %s' % SETUPTOOLS_MIN_VER
     )
