@@ -25,7 +25,6 @@
 
 #include "hdfs_fs.h"
 #include "hdfs_file.h"
-#include <jni.h>
 
 static char* module__name__ = "native_core_hdfs";
 static char* module__doc__ = "native_hdfs_core implementation";

@@ -145,14 +145,14 @@ EXTENSION_MODULES = [
     Extension(
         'pydoop.native_core_hdfs',
         include_dirs=[
-            'src/libhdfs',
+            #'src/libhdfs',
             'src/libhdfs/include',
-            'src/libhdfs/os/posix',
+            #'src/libhdfs/os/posix',
         ],
         sources=list(itertools.chain(
-            glob.iglob('src/libhdfs/*.c'),
-            glob.iglob('src/libhdfs/common/*.c'),
-            glob.iglob('src/libhdfs/os/posix/*.c'),
+            #glob.iglob('src/libhdfs/*.c'),
+            #glob.iglob('src/libhdfs/common/*.c'),
+            #glob.iglob('src/libhdfs/os/posix/*.c'),
             glob.iglob('src/native_core_hdfs/*.cc')
         )),
         extra_compile_args=EXTRA_COMPILE_ARGS,
@@ -290,8 +290,8 @@ class BuildPydoopExt(build_ext):
 
     # called for each extension, after compiler has been set up
     def build_extension(self, ext):
-        if ext.name == "pydoop.native_core_hdfs":
-            self.__finalize_hdfs(ext)
+        #if ext.name == "pydoop.native_core_hdfs":
+        #    self.__finalize_hdfs(ext)
         build_ext.build_extension(self, ext)
 
 
