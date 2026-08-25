@@ -317,7 +317,7 @@ class BuildPydoop(build):
         build.run(self)
         try:
             self.create_tmp()
-            self.build_java()
+            #self.build_java()
         finally:
             # On NFS, if we clean up right away we have issues with
             # NFS handles being still in the directory trees to be
