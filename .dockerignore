@@ -1,3 +1,8 @@
 .*
 Dockerfile*
-docker
+build
+dist
+pydoop.egg-info
+**/__pycache__
+**/*.pyc
+myenv
