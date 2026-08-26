@@ -21,6 +21,9 @@
 #                          as in branch-5.0 core_install.sh)
 #       --no-cache         pass --no-cache to docker build
 #   -h, --help
+#
+# Env: PLATFORM  docker build platform (default linux/amd64, which is what the
+#                clusters run; on an ARM Mac this builds under emulation)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -70,8 +73,14 @@ else
 fi
 
 mkdir -p "${OUT_DIR}"
+# The artifacts must be linux/amd64: the Dockerfile installs an x86_64 Miniconda
+# and the clusters run linux/amd64. Without --platform, docker builds for the
+# host architecture, so on an ARM Mac the x86_64 installer fails with
+#   rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2   (exit 133)
+# Pin it here; override with PLATFORM=... for a native build on other hosts.
 DOCKER_BUILDKIT=1 docker build \
     ${NO_CACHE} \
+    --platform "${PLATFORM:-linux/amd64}" \
     --progress=plain \
     --file "${DOCKERFILE}" \
     --target artifacts \
