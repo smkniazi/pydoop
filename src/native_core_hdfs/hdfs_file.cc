@@ -58,12 +58,28 @@ void FileClass_dealloc(FileInfo* self)
 
 int FileClass_init(FileInfo *self, PyObject *args, PyObject *kwds)
 {
+    PyObject *fs_cap = NULL, *file_cap = NULL;
     PyObject *name = NULL, *mode = NULL, *tmp = NULL;
+    hdfsFS fs = NULL;
+    hdfsFile file = NULL;
 
-    if (!PyArg_ParseTuple(args, "OOOO",
-                          &(self->fs), &(self->file), &name, &mode)) {
+    /* The libhdfs handles arrive wrapped in capsules created by
+     * FsClass_open_file. Raw pointers must not pose as PyObject* here. */
+    if (!PyArg_ParseTuple(args, "O!O!UU",
+                          &PyCapsule_Type, &fs_cap,
+                          &PyCapsule_Type, &file_cap,
+                          &name, &mode)) {
         return -1;
     }
+    fs = (hdfsFS) PyCapsule_GetPointer(fs_cap, PYDOOP_HDFS_FS_CAPSULE);
+    if (NULL == fs) {
+        return -1;
+    }
+    file = (hdfsFile) PyCapsule_GetPointer(file_cap, PYDOOP_HDFS_FILE_CAPSULE);
+    if (NULL == file) {
+        return -1;
+    }
+    FileClass_init_internal(self, fs, file);
 
     if (name) {
 	tmp = self->name;

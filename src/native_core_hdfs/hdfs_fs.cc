@@ -145,7 +145,7 @@ PyObject* FsClass_get_path_info(FsInfo* self, PyObject *args, PyObject *kwds) {
     }
 
     retval =
-        Py_BuildValue("{s:O,s:s,s:s,s:i,s:i,s:h,s:s,s:h,s:i,s:O,s:L}",
+        Py_BuildValue("{s:N,s:s,s:s,s:i,s:i,s:h,s:s,s:h,s:i,s:N,s:L}",
             "name", PyUnicode_FromString(info->mName),
             "kind", info->mKind == kObjectKindDirectory ? "directory" : "file",
             "group", info->mGroup,
@@ -335,19 +335,40 @@ PyObject* FsClass_open_file(FsInfo* self, PyObject *args, PyObject *kwds)
     PyObject* module = PyImport_ImportModule("pydoop.native_core_hdfs");
     if (NULL == module) {
         PyMem_Free(path);
-	free(file);
-	return NULL;
+        hdfsCloseFile(self->_fs, file);
+        return NULL;
     }
+    /*
+     * hdfsFS and hdfsFile are opaque C pointers: hand them to Python wrapped
+     * in capsules. They used to go straight through the "O" format, which
+     * makes the interpreter Py_INCREF/Py_DECREF whatever it is given. With the
+     * JNI libhdfs an hdfsFS *is* a JNI global reference, i.e. a pointer to the
+     * slot that holds the FileSystem oop, so the INCREF wrote into the JVM's
+     * root set. Since Python 3.12 (PEP 683, immortal objects) Py_DECREF is a
+     * no-op for any word whose low 32 bits look negative - true for every
+     * compressed oop in a heap placed below 4 GB - so the increments were
+     * never undone and the reference stayed permanently misaligned. The next
+     * JNI call through it (hdfsGetPathInfo below -> FileSystem#exists) then
+     * crashed the JVM inside libhdfs' invokeMethodOnJclass with a garbage
+     * klass pointer. Same for hdfsFile, whose first word is the stream's
+     * global reference.
+     */
+    PyObject *fs_cap = PyCapsule_New(self->_fs, PYDOOP_HDFS_FS_CAPSULE, NULL);
+    PyObject *file_cap = PyCapsule_New(file, PYDOOP_HDFS_FILE_CAPSULE, NULL);
     PyObject *name = PyUnicode_FromString(path);
     PyObject *pymode = PyUnicode_FromString(mode);
-    retval = PyObject_CallMethod(module, "CoreHdfsFile", "OOOO",
-				 self->_fs, file, name, pymode);
+    if (fs_cap && file_cap && name && pymode) {
+        retval = PyObject_CallMethod(module, "CoreHdfsFile", "OOOO",
+                                     fs_cap, file_cap, name, pymode);
+    }
     Py_XDECREF(pymode);
     Py_XDECREF(name);
+    Py_XDECREF(file_cap);
+    Py_XDECREF(fs_cap);
     Py_XDECREF(module);
     if (NULL == retval) {
         PyMem_Free(path);
-        free(file);
+        hdfsCloseFile(self->_fs, file);
         return NULL;
     }
 

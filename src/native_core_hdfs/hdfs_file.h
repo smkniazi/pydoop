@@ -34,6 +34,15 @@
 #include <structmember.h>
 #include "../py3k_compat.h"
 
+/*
+ * Names of the PyCapsule objects that carry the libhdfs handles from
+ * CoreHdfsFs.open_file() (FsClass_open_file) to CoreHdfsFile.__init__()
+ * (FileClass_init). hdfsFS / hdfsFile are opaque C pointers and must never be
+ * handed to the interpreter as if they were PyObject*: see FsClass_open_file.
+ */
+#define PYDOOP_HDFS_FS_CAPSULE   "pydoop.native_core_hdfs.hdfsFS"
+#define PYDOOP_HDFS_FILE_CAPSULE "pydoop.native_core_hdfs.hdfsFile"
+
 
 typedef struct {
     PyObject_HEAD
