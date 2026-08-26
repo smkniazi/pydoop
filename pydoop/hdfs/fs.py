@@ -68,16 +68,29 @@ def _get_ip(host, default=None):
     return ip if ip != "0.0.0.0" else default
 
 def _get_hopsfs_connection_info():
-    # Read LIBHDFS_DEFAULT_FS and LIBHDFS_DEFAULT_USER environment variables
+    # Read LIBHDFS_DEFAULT_FS and LIBHDFS_DEFAULT_USER environment variables.
+    # Returns (host, port, user) with port already an int, and None for anything
+    # the environment does not provide.
     default_fs = os.getenv("LIBHDFS_DEFAULT_FS")
     default_user = os.getenv("LIBHDFS_DEFAULT_USER")
-    
-    # Split host and port from LIBHDFS_DEFAULT_FS
+
+    # Split host and port from LIBHDFS_DEFAULT_FS. The expected form is
+    # "host:port", but be tolerant of a scheme prefix and a trailing path (that
+    # is how fs.defaultFS is written in core-site.xml) and of a missing port,
+    # rather than raising ValueError on unpacking.
+    host, port = None, None
     if default_fs:
-        host, port = default_fs.split(":")
-    else:
-        host, port = None, None
-    
+        netloc = default_fs.split("://", 1)[-1]
+        netloc = netloc.split("/", 1)[0]  # drop any path component
+        host, _, port_str = netloc.rpartition(":")
+        if not host:                      # no ":" in the value: it was host-only
+            host, port = netloc, common.DEFAULT_PORT
+        else:
+            try:
+                port = int(port_str)
+            except ValueError:
+                port = common.DEFAULT_PORT
+
     return host, port, default_user
 
 def _get_connection_info(host, port, user):
@@ -85,8 +98,15 @@ def _get_connection_info(host, port, user):
 
     # get hopsfs connection info from env variables
     h, p, u = _get_hopsfs_connection_info()
-    if host is not None and port is not None and user is not None:
-        return h, int(p), u, fs
+    # Gate on what the *environment* gave us, since that is what we return here.
+    # Gating on the caller's host/port/user instead was effectively always true
+    # (hdfs.__init__ defaults all three before calling us), which both made the
+    # discovery branch below unreachable and raised
+    # "int() argument must be ... not 'NoneType'" in any context that does not
+    # set LIBHDFS_DEFAULT_FS -- e.g. a Hopsworks PYTHON job, which sets
+    # LIBHDFS_DEFAULT_USER only. Fall through to discovery when it is absent.
+    if h is not None and p is not None and u is not None:
+        return h, p, u, fs  # p is already an int
     else:
         res = urlparse(fs.get_working_directory())
         if not res.scheme or res.scheme == "file":
@@ -103,7 +123,11 @@ def _get_connection_info(host, port, user):
                     hosts = fs.get_hosts(str(res.path), 0, 0)
                     if hosts and hosts[0] and hosts[0][0]:
                         h, p = hosts[0][0], common.DEFAULT_PORT
-            u = res.path.split("/", 2)[2]
+            # working directory is normally "/user/<name>"; a bare "/" (or an
+            # empty path) has no user component, so fall back instead of
+            # raising IndexError.
+            parts = res.path.split("/", 2)
+            u = parts[2] if len(parts) > 2 else (user or getpass.getuser())
         return h, int(p), u, fs
 
 
